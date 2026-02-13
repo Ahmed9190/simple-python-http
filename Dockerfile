@@ -7,6 +7,8 @@ WORKDIR /data
 
 COPY rootfs/ /
 
+EXPOSE 8099
+
 RUN chmod a+x /usr/bin/run.sh
 
 CMD ["/usr/bin/run.sh"]
