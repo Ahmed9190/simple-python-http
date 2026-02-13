@@ -2,23 +2,39 @@
 
 > File: `04-configuration.md`
 
-## Basic Metadata
+## Minimum Required Fields
 
 ```yaml
 name: "My App"
-version: "2026.2.0"
+version: "1.0.0"
 slug: "my_app"
 description: "App description"
 url: "https://github.com/example/repo"
 arch:
   - aarch64
   - amd64
-startup: application  # application, system, initialize
+  - armv7
+init: false
 boot: auto
+homeassistant: "2022.12.0"
 ```
 
-- **slug**: Immutable identifier
-- **startup**: `application` starts after Home Assistant Core
+## Critical Settings
+
+- **`init: false`** - Required for simple add-ons using CMD approach
+- **`homeassistant`** - Minimum HA version requirement
+- **Do NOT use `startup: application`** - Causes S6 errors with simple add-ons
+- **`slug`** - Immutable identifier (no updates allowed)
+
+## Common Options
+
+```yaml
+ports:
+  8080/tcp: 8080
+ingress: true
+ingress_port: 8080
+panel_icon: mdi:web
+```
 
 ## Schema Types
 
@@ -28,41 +44,19 @@ boot: auto
 | password | Password field with visibility toggle |
 | `list(a\|b\|c)` | Dropdown |
 | device | Device path dropdown |
-| device(filter) | Filtered device list (e.g., `device(subsystem=tty)`) |
-| match(regex) | Text box with validation |
+| `device(filter)` | Filtered device list |
+| `match(regex)` | Text box with validation |
 
 ```yaml
 options:
+  port: 8080
   log_level: info
-  serial_port: /dev/ttyUSB0
-  enable_ssl: true
 schema:
+  port: port
   log_level: list(trace|debug|info|warning|error)
-  serial_port: device(subsystem=tty)?
-  enable_ssl: bool
 ```
 
 `?` marks field as optional.
-
-## Network
-
-### Ingress (Web UI)
-
-```yaml
-ingress: true
-ingress_port: 8099
-panel_icon: mdi:rocket-launch
-```
-
-### Port Mapping
-
-```yaml
-ports:
-  1883/tcp: 1883
-  8554/tcp: null  # null allows user configuration
-```
-
-Ingress is mandatory for web interfaces. Use ports only for non-HTTP (RTSP, MQTT).
 
 ## Hardware Flags
 

@@ -1,27 +1,28 @@
-# S6-Overlay v3 & Service Orchestration
+# S6-Overlay & Service Orchestration
 
 > File: `03-s6-overlay.md`
 
-## Overview
+## Two Approaches
 
-S6-Overlay v3 is the init system. Must be PID 1 inside the container.
+### 1. Simple Add-on (Recommended for Most Cases)
 
-## PID 1 Requirement
+Use CMD approach for single-process apps:
 
-- Handles all signals (SIGTERM from Supervisor)
-- Reaps zombie processes
-- Version 3 enforces this rigidly
+```dockerfile
+CMD ["/usr/bin/run.sh"]
+```
 
-**Breaking Change**: `host_pid: true` is incompatible with S6 (host's systemd is PID 1).
+- Run script in `rootfs/usr/bin/run.sh`
+- Base image handles PID 1 properly
+- No S6 configuration needed
 
-## Service Types
+### 2. S6-Overlay (Advanced)
 
-| Type | Purpose | Script |
-|------|---------|--------|
-| **Longrun** | Continuous processes (daemons) | `run` |
-| **Oneshot** | Setup tasks (config generation) | `up` |
+Only use when you need multi-service orchestration:
+- Multiple processes that must start in order
+- Complex dependencies between services
 
-## Directory Structure
+## S6-Overlay Structure
 
 ```
 /etc/s6-overlay/s6-rc.d/
@@ -29,39 +30,24 @@ S6-Overlay v3 is the init system. Must be PID 1 inside the container.
 │   ├── type (contains "oneshot")
 │   ├── up
 │   └── dependencies.d/base
-├── app-database/
+├── app-main/
 │   ├── type (contains "longrun")
 │   ├── run
 │   └── dependencies.d/app-prepare
-└── app-main/
-    ├── type (contains "longrun")
-    ├── run
-    └── dependencies.d/app-database
 ```
 
-Activate services by creating empty files in `/etc/s6-overlay/s6-rc.d/user/contents.d/`.
+## Service Types
 
-## Environment Variables
+| Type | Purpose | Script |
+|------|---------|--------|
+| **Longrun** | Continuous processes | `run` |
+| **Oneshot** | Setup tasks | `up` |
 
-Use `#!/usr/bin/with-contenv bashio` shebang to access:
-- Bashio library
-- Supervisor-passed environment variables
+## Common Error
 
-## Example Oneshot Script
+> `s6-overlay-suexec: fatal: can only run as pid 1`
 
-```bash
-#!/usr/bin/with-contenv bashio
-
-bashio::log.info "Parsing configuration..."
-CERT_FILE=$(bashio::config 'cert_file')
-
-if ! bashio::fs.file_exists "$CERT_FILE"; then
-    bashio::log.error "Certificate not found"
-    bashio::exit.nok
-fi
-
-echo "cert=$CERT_FILE" > /data/app.conf
-```
+This means you're using S6 approach incorrectly. **Use the simple CMD approach instead.**
 
 ## References
 
