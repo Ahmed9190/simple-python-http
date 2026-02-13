@@ -1,14 +1,11 @@
-#!/usr/bin/with-contenv bashio
-
-PORT=$(bashio::config 'port')
-MESSAGE=$(bashio::config 'message')
-
-bashio::log.info "Starting Python HTTP server on port ${PORT}..."
+#!/bin/bash
+PORT=${CONFIG_PORT:-8099}
+MESSAGE=${CONFIG_MESSAGE:-"Hello from Home Assistant Add-on!"}
 
 export PORT
 export MESSAGE
 
-exec python3 << 'PYEOF'
+exec python3 -c "
 import http.server
 import socketserver
 import os
@@ -28,4 +25,4 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 with socketserver.TCPServer(('', PORT), Handler) as httpd:
     httpd.serve_forever()
-PYEOF
+"
