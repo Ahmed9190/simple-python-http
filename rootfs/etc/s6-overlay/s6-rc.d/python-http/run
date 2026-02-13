@@ -5,13 +5,16 @@ MESSAGE=$(bashio::config 'message')
 
 bashio::log.info "Starting Python HTTP server on port ${PORT}..."
 
-exec python3 -c "
+export PORT
+export MESSAGE
+
+exec python3 << 'PYEOF'
 import http.server
 import socketserver
 import os
 
-PORT = int(os.environ.get('PORT', ${PORT}))
-MESSAGE = os.environ.get('MESSAGE', '${MESSAGE}')
+PORT = int(os.environ.get('PORT', 8099))
+MESSAGE = os.environ.get('MESSAGE', 'Hello from Home Assistant Add-on!')
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -25,4 +28,4 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 with socketserver.TCPServer(('', PORT), Handler) as httpd:
     httpd.serve_forever()
-"
+PYEOF
